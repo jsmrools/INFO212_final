@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}INFO212 – Treningsoversikt{% endblock %}
+{% block content %}
+<h1>Treningsoversikt</h1>
+
+<section class="grid-2">
+  <form class="card" hx-post="{{ url_for('create_workout') }}" hx-target="#workout-list" hx-swap="outerHTML">
+    <h2>Ny økt</h2>
+    {{ form.hidden_tag() }}
+    <label>Navn {{ form.name() }}</label>
+    <div class="row">
+      <label style="flex:1;">Sett {{ form.sets() }}</label>
+      <label style="flex:1;">Varighet (min) {{ form.duration_min() }}</label>
+    </div>
+    <label>Notater {{ form.notes(rows=3) }}</label>
+
+    <details>
+      <summary>Øvelser (valgfritt)</summary>
+      <div id="exerciseList" class="muted" style="margin:.5rem 0 .6rem;">Ingen øvelser lagt til.</div>
+      <div class="row">
+        <input id="exName" placeholder="Øvelse (f.eks. Benkpress)" style="flex:2;" />
+        <input id="exSets" type="number" min="1" max="10" value="3" style="flex:1;" />
+        <input id="exReps" type="number" min="1" max="30" value="8" style="flex:1;" />
+        <input id="exWeight" type="number" min="0" max="500" value="60" style="flex:1;" />
+        <button id="addExercise" class="secondary" type="button">Legg til</button>
+      </div>
+      <input type="hidden" name="exercises_json" id="exercises_json" />
+    </details>
+
+    <div class="row" style="margin-top:.6rem;">
+      <button type="submit">Lagre</button>
+      <button type="reset" class="secondary" id="resetWorkout">Nullstill</button>
+    </div>
+  </form>
+
+  <aside class="card" hx-get="{{ url_for('stats_partial') }}" hx-trigger="load, revealed" hx-target="#stats" hx-swap="innerHTML">
+    <h2>Statistikk</h2>
+    <div id="stats" class="muted">Laster…</div>
+  </aside>
+</section>
+
+<section class="card" style="margin-top:1rem;">
+  <h2>Programforslag</h2>
+
+  <!-- add an id so buttons can include this form -->
+  <form id="quizForm"
+        class="row wrap"
+        hx-post="{{ url_for('questionnaire') }}"
+        hx-target="#planResult"
+        hx-swap="innerHTML">
+    {{ quiz.hidden_tag() }}
+
+    <label>Mål {{ quiz.goal() }}</label>
+    <label>Nivå {{ quiz.level() }}</label>
+    <label>Utstyr {{ quiz.gear() }}</label>
+
+    <!-- single-day button (existing) -->
+    <button type="submit">Generer forslag</button>
+
+    <!-- WEEKLY PLAN button (posts to a different endpoint) -->
+    <button type="button" class="btn-outline"
+        hx-post="{{ url_for('questionnaire_weekly') }}"
+        hx-include="#quizForm"
+        hx-target="#planResult"
+        hx-swap="innerHTML">WEEKLY PLAN</button>
+
+  </form>
+
+  <!-- keep ONE results container -->
+  <div id="planResult" class="muted" style="margin-top:.6rem;">Ingen forslag ennå.</div>
+</section>
+
+
+<section id="workout-list">
+  {% include "workouts_list.html" %}
+</section>
+
+<script>
+  const exList = [];
+  const exerciseList = document.getElementById('exerciseList');
+  const exJson = document.getElementById('exercises_json');
+  function renderExercises(){
+    if(exList.length===0){ exerciseList.textContent = 'Ingen øvelser lagt til.'; exJson.value = '[]'; return; }
+    exerciseList.innerHTML = exList.map((e,i)=> `${i+1}. ${e.name} — ${e.sets}x${e.reps}${e.weight?(' @ '+e.weight):''}`).join('<br>');
+    exJson.value = JSON.stringify(exList);
+  }
+  document.getElementById('addExercise').addEventListener('click', ()=>{
+    const name = document.getElementById('exName').value.trim();
+    const sets = Number(document.getElementById('exSets').value||0);
+    const reps = Number(document.getElementById('exReps').value||0);
+    const weight = Number(document.getElementById('exWeight').value||0);
+    if(!name || sets<1 || reps<1){ alert('Fyll ut øvelsesnavn, sett>=1, reps>=1'); return; }
+    exList.push({name, sets, reps, weight});
+    renderExercises();
+    document.getElementById('exName').value = '';
+  });
+  document.getElementById('resetWorkout').addEventListener('click', ()=>{ exList.length=0; renderExercises(); });
+  renderExercises();
+</script>
+{% endblock %}

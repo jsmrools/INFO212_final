@@ -1,0 +1,21 @@
+<div class="weekly-plan">
+    <h3>Ukentlig plan ({{ week.meta.days_per_week }} økter)</h3>
+    <p>Mål: {{ week.meta.goal }} • Nivå: {{ week.meta.level }} • Utstyr: {{ week.meta.gear }}</p>
+    <ol>
+      {% for day in week.days %}
+        <li style="margin-bottom:1rem;">
+          <strong>{{ day.name }}</strong>
+          <ul>
+          {% for ex in day.exercises %}
+            <li>
+              {{ ex.name }}
+              {% if ex.sets %} — {{ ex.sets }} x {{ ex.reps }}{% endif %}
+              {% if ex.time_min %} — {{ ex.time_min }} min{% endif %}
+            </li>
+          {% endfor %}
+          </ul>
+        </li>
+      {% endfor %}
+    </ol>
+  </div>
+  

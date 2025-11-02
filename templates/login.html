@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Logg inn – INFO212{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>Logg inn</h1>
+  <form method="post">
+    {{ form.hidden_tag() }}
+    <label>Brukernavn
+      {{ form.username(size=32) }}
+    </label>
+    <label>Passord
+      {{ form.password() }}
+    </label>
+    <p class="muted">Ingen konto? Skriv ønsket brukernavn/passord – bruker lages automatisk.</p>
+    <button type="submit">Fortsett</button>
+  </form>
+</section>
+{% endblock %}

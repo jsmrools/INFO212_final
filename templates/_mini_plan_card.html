@@ -1,0 +1,22 @@
+<div>
+    <div class="title">{{ title }}</div>
+    <ul>
+      {% for e in items %}
+        <li>
+          {{ e.name }}
+          {% if e.sets %} — {{ e.sets }}x{{ e.reps }}{% endif %}
+          {% if e.time_min %} — {{ e.time_min }} min{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+    <div class="actions">
+      <a class="btn btn-xs" href="{{ url_for('workouts') }}">Åpne i appen</a>
+      <button class="secondary btn-xs"
+              hx-post="{{ url_for('create_workout') }}"
+              hx-vals='{"name":"Hurtig styrke","exercises_json": {{ items|tojson }} }'
+              hx-target="#workout-list" hx-swap="outerHTML">
+        Lagre som økt
+      </button>
+    </div>
+  </div>
+  

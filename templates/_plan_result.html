@@ -1,0 +1,20 @@
+{% if plan %}
+  <div class="card">
+    <h3>Plan</h3>
+    <ol>
+    {% for e in plan %}
+      <li>{{ e.name }} — {{ e.sets }}x{{ e.reps }}{% if e.weight %} @ {{ e.weight }}{% endif %}</li>
+    {% endfor %}
+    </ol>
+    <form hx-post="{{ url_for('create_workout') }}" hx-target="#workout-list" hx-swap="outerHTML" class="row">
+      <input type="hidden" name="name" value="Plan: {{ goal }} / {{ level }} / {{ gear }}">
+      <input type="hidden" name="sets" value="{{ plan|length }}">
+      <input type="hidden" name="duration_min" value="45">
+      <input type="hidden" name="notes" value="Autogenerert fra spørreskjema">
+      <input type="hidden" name="exercises_json" value='{{ plan|tojson }}'>
+      <button type="submit">Lagre som økt</button>
+    </form>
+  </div>
+{% else %}
+  <p class="muted">Ingen forslag generert.</p>
+{% endif %}

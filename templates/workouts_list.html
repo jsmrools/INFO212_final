@@ -1,0 +1,31 @@
+<table class="table">
+  <thead>
+    <tr><th>Navn</th><th>Sett</th><th>Min</th><th>Notater</th><th>Øvelser</th><th>Tid</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for w in workouts %}
+      <tr>
+        <td>{{ w.name }}</td>
+        <td>{{ w.sets }}</td>
+        <td>{{ w.duration_min }}</td>
+        <td>{{ w.notes or "–" }}</td>
+        <td>
+          {% if w.exercises %}
+            {% for e in w.exercises %}
+              <span>{{ e.name }} ({{ e.sets }}x{{ e.reps }}{% if e.weight %} @ {{ e.weight }}{% endif %}){% if not loop.last %}, {% endif %}</span>
+            {% endfor %}
+          {% else %}–{% endif %}
+        </td>
+        <td>{{ w.created_at }}</td>
+        <td>
+          <form hx-post="{{ url_for('delete_workout') }}" hx-target="#workout-list" hx-swap="outerHTML" style="display:inline;">
+            <input type="hidden" name="workout_id" value="{{ w.id }}">
+            <button class="secondary" type="submit">Slett</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7" class="muted">Ingen økter registrert ennå.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>

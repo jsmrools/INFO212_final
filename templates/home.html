@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}INFO212 – Hjem{% endblock %}
+{% block content %}
+
+  <section class="hero card">
+    <img class="hero-img" 
+         src="{{ url_for('static', filename='images/workout.gif') }}" 
+         alt="Trening – styrke og kondisjon" loading="lazy">
+    <h1>Velkommen til INFO212-treningsappen</h1>
+    <p>Planlegg økter, generér program med spørreskjema, og hold oversikt.</p>
+    <p class="cta-row">
+      <a href="{{ url_for('workouts') }}" class="btn">Gå til Treningsoversikt</a>
+      {% if not current_user.is_authenticated %}
+        <a href="{{ url_for('login') }}" class="btn-outline">Logg inn</a>
+      {% endif %}
+    </p>
+  </section>
+
+  <section class="grid-2" style="margin-top:1rem;">
+    <!-- Strength -->
+    <div class="flip-card" role="button" tabindex="0"
+         onclick="this.classList.toggle('is-flipped')"
+         onkeydown="if(event.key==='Enter'||event.key===' ') this.classList.toggle('is-flipped')">
+      <div class="flip-inner">
+        <div class="flip-front">
+          <img src="{{ url_for('static', filename='images/weight.gif') }}" alt="Styrkeprogram" loading="lazy">
+          <figcaption>Styrkeprogram</figcaption>
+        </div>
+        <div class="flip-back"
+             hx-get="{{ url_for('example_plan_card', kind='strength') }}"
+             hx-trigger="revealed once"
+             hx-swap="innerHTML">
+          <div class="loading">Laster eksempel…</div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Cardio -->
+    <div class="flip-card" role="button" tabindex="0"
+         onclick="this.classList.toggle('is-flipped')"
+         onkeydown="if(event.key==='Enter'||event.key===' ') this.classList.toggle('is-flipped')">
+      <div class="flip-inner">
+        <div class="flip-front">
+          <img src="{{ url_for('static', filename='images/treadmill.gif') }}" alt="Kondisjon & intervaller" loading="lazy">
+          <figcaption>Kondisjon & intervaller</figcaption>
+        </div>
+        <div class="flip-back"
+             hx-get="{{ url_for('example_plan_card', kind='cardio') }}"
+             hx-trigger="revealed once"
+             hx-swap="innerHTML">
+          <div class="loading">Laster eksempel…</div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+
+{% endblock %}

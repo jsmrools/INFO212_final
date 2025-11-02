@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}INFO212 – Kalender{% endblock %}
+{% block content %}
+<h1>Kalender</h1>
+
+<div class="card" style="padding:0; overflow:hidden">
+  <div class="row" style="justify-content:space-between; align-items:center; padding:.75rem 1rem; border-bottom:1px solid #eee;">
+    <div>
+      <button id="prevBtn" class="secondary">◀</button>
+      <button id="todayBtn" class="secondary">I dag</button>
+      <button id="nextBtn" class="secondary">▶</button>
+    </div>
+    <h2 id="monthLabel" style="margin:0"></h2>
+    <div></div>
+  </div>
+  <div style="padding:.75rem 1rem;">
+    <div class="grid-7 muted" style="text-align:center; margin-bottom:.25rem;">
+      <div>Man</div><div>Tir</div><div>Ons</div><div>Tor</div><div>Fre</div><div>Lør</div><div>Søn</div>
+    </div>
+    <div id="grid" class="grid-7"></div>
+  </div>
+</div>
+
+<div class="grid-2" style="margin-top:1rem; align-items:start;">
+  <div class="card">
+    <h2 id="sideDate">—</h2>
+    <div id="sessionList" class="muted">Ingen økter.</div>
+  </div>
+
+  <form id="createForm" class="card">
+    <h2>Ny økt for <span id="formDate">—</span></h2>
+    <label>Workout
+      <select id="workoutId" required></select>
+    </label>
+    <div class="row">
+      <label style="flex:1;">Start <input id="startTime" type="time"></label>
+      <label style="flex:1;">Slutt <input id="endTime" type="time"></label>
+    </div>
+    <label>Notater
+      <textarea id="notes" rows="2" placeholder="f.eks. RPE 7, lett dag"></textarea>
+    </label>
+    <button type="submit">Lagre</button>
+  </form>
+</div>
+
+<script>
+const fmt = d => new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString().slice(0,10);
+const startOfMonth = d => new Date(d.getFullYear(), d.getMonth(), 1);
+const endOfMonth = d => new Date(d.getFullYear(), d.getMonth()+1, 0);
+const addMonths = (d,n) => new Date(d.getFullYear(), d.getMonth()+n, 1);
+const monthLabel = d => d.toLocaleString(undefined, { month:'long', year:'numeric' });
+
+let currentMonth = startOfMonth(new Date());
+let selectedDate = new Date();
+let sessionsByDate = {};
+let workouts = [];
+
+async function fetchJSON(url, opts){
+  const r = await fetch(url, opts);
+  if(!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+
+async function loadWorkouts(){
+  workouts = await fetchJSON("/api/workouts");
+  const sel = document.getElementById('workoutId');
+  sel.innerHTML = '<option value="" disabled selected>Velg workout…</option>' +
+    workouts.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+}
+
+function monthGrid(base){
+  const start = startOfMonth(base);
+  const firstWeekday = (start.getDay()+6)%7; // Mon=0
+  const gridStart = new Date(start); gridStart.setDate(start.getDate()-firstWeekday);
+  const days = []; const x = new Date(gridStart);
+  for(let i=0;i<42;i++){ days.push(new Date(x)); x.setDate(x.getDate()+1); }
+  return days;
+}
+
+async function loadSessionsForVisible(){
+  const days = monthGrid(currentMonth);
+  const from = fmt(days[0]);
+  const to = fmt(days[41]);
+  const data = await fetchJSON(`/api/sessions?from=${from}&to=${to}`);
+  sessionsByDate = {};
+  for(const s of data){
+    const k = s.date.slice(0,10);
+    (sessionsByDate[k] ||= []).push(s);
+  }
+}
+
+function render(){
+  document.getElementById('monthLabel').textContent = monthLabel(currentMonth);
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  for(const d of monthGrid(currentMonth)){
+    const k = fmt(d);
+    const inMonth = d.getMonth()===currentMonth.getMonth();
+    const isToday = k===fmt(new Date());
+    const isSelected = k===fmt(selectedDate);
+    const sess = sessionsByDate[k]||[];
+    const el = document.createElement('button');
+    el.className = `cell ${inMonth? 'in-month':'out-month'} ${isToday?'today':''} ${isSelected?'selected':''}`;
+    el.innerHTML = `
+      <div class="cell-head">
+        <span>${d.getDate()}</span>
+        ${sess.length? `<span class="badge">${sess.length}x</span>`:''}
+      </div>
+      <div class="chips">
+        ${sess.slice(0,3).map(s=>`<span class="chip">${s.workout_name||('Workout #'+s.workout_id)}</span>`).join('')}
+        ${sess.length>3? `<span class="more">+${sess.length-3} flere</span>`:''}
+      </div>`;
+    el.onclick = ()=>{ selectedDate = new Date(d); updateSide(); render(); };
+    grid.appendChild(el);
+  }
+}
+
+function updateSide(){
+  const k = fmt(selectedDate);
+  document.getElementById('sideDate').textContent = selectedDate.toLocaleDateString();
+  document.getElementById('formDate').textContent = selectedDate.toLocaleDateString();
+  const list = document.getElementById('sessionList');
+  const sess = sessionsByDate[k]||[];
+  if(!sess.length){ list.className='muted'; list.innerHTML='Ingen økter.'; return; }
+  list.className='';
+  list.innerHTML = sess.map(s => `
+    <div class="row" style="justify-content:space-between; align-items:center; border:1px solid #eee; padding:.5rem .75rem; border-radius:10px;">
+      <div>
+        <div><strong>${s.workout_name||('Workout #'+s.workout_id)}</strong></div>
+        <div class="muted" style="font-size:.9em;">${s.start_time? `${s.start_time}–${s.end_time||''}` : 'Når som helst'}</div>
+        ${s.notes? `<div style="font-size:.9em;">${s.notes}</div>`:''}
+      </div>
+      <button class="danger" onclick="deleteSession(${s.id})">Slett</button>
+    </div>
+  `).join('');
+}
+
+async function deleteSession(id){
+  if(!confirm('Slette økten?')) return;
+  await fetch(`/api/sessions/${id}`, { method:'DELETE' });
+  const k = fmt(selectedDate);
+  sessionsByDate[k] = (sessionsByDate[k]||[]).filter(s=>s.id!==id);
+  updateSide(); render();
+}
+
+document.getElementById('createForm').addEventListener('submit', async (ev)=>{
+  ev.preventDefault();
+  const payload = {
+    date: fmt(selectedDate),
+    workout_id: document.getElementById('workoutId').value,
+    start_time: document.getElementById('startTime').value || null,
+    end_time: document.getElementById('endTime').value || null,
+    notes: document.getElementById('notes').value || null,
+  };
+  const r = await fetch('/api/sessions', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+  });
+  if(!r.ok){ alert('Kunne ikke lagre.'); return; }
+  const created = await r.json();
+  const k = fmt(selectedDate);
+  (sessionsByDate[k] ||= []).push(created);
+  document.getElementById('notes').value='';
+  render(); updateSide();
+});
+
+document.getElementById('prevBtn').onclick = async ()=>{ currentMonth = addMonths(currentMonth,-1); await loadSessionsForVisible(); render(); };
+document.getElementById('nextBtn').onclick = async ()=>{ currentMonth = addMonths(currentMonth, 1); await loadSessionsForVisible(); render(); };
+document.getElementById('todayBtn').onclick = async ()=>{ currentMonth = startOfMonth(new Date()); selectedDate = new Date(); await loadSessionsForVisible(); render(); };
+
+(async function init(){
+  await loadWorkouts();
+  await loadSessionsForVisible();
+  updateSide();
+  render();
+})();
+</script>
+
+<style>
+.grid-7{ display:grid; grid-template-columns: repeat(7, 1fr); gap:.5rem; }
+.grid-2{ display:grid; grid-template-columns: 1fr 1fr; gap:1rem; }
+.cell{ height:110px; padding:.5rem; text-align:left; border:1px solid #eee; border-radius:12px; background:#fff; transition: box-shadow .15s ease-in-out; }
+.cell:hover{ box-shadow: 0 6px 16px rgba(0,0,0,.05); }
+.cell.out-month{ opacity:.45; }
+.cell.today{ outline:2px solid #6366f1; }
+.cell.selected{ box-shadow: 0 0 0 2px #c7d2fe inset; }
+.cell-head{ display:flex; justify-content:space-between; align-items:center; font-size:.95em; }
+.badge{ font-size:.65rem; padding:.1rem .35rem; background:#eef2ff; color:#4338ca; border-radius:999px; }
+.chips{ margin-top:.25rem; display:flex; gap:.25rem; flex-wrap:wrap; max-height:58px; overflow:auto; }
+.chip{ font-size:.7rem; padding:.15rem .4rem; background:#f5f3ff; color:#5b21b6; border-radius:999px; }
+.more{ font-size:.7rem; color:#9ca3af; }
+.danger{ background:#fee2e2; color:#b91c1c; border:none; padding:.35rem .6rem; border-radius:10px; }
+</style>
+{% endblock %}
