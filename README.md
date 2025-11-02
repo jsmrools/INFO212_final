@@ -1,21 +1,36 @@
-# INFO212-GRUPPEPROSJEKT
-Semesterprosjekt høst 2025 info 212
-Assignment 1
-Tasks:
-  Group formation. Select a customer representative, and perhaps a Scrum master.
-Identify a problem you want to solve or a situation you want to improve.
-Identify clearly who will be the users of the system
-Describe 2-3 user stories per group member.
-Perhaps describe one or more use cases for complex stories (for example with exceptions).
-Assess the effort required to complete each user story.
-Prioritise the user stories.
-Submission:
-Describe the outcome of each task:
-Group members and roles
-Project goal (problem to solve or situation to improve)
-System users
-User stories (and use cases)
-Estimated effort per user story
-Story prioritisation
-Be brief. For example, the problem/situation description can be a paragraph of 3-5 sentences. This is not a writing contest.
-Submit a single PDF file. Use a file name that clearly identifies the group members. Use a file name like this: Submission1-EAndersen-FBoyake-GChedid-HDahl.pdf .
+# INFO212 Treningsapp
+
+A Flask web app for planning, generating, and logging workouts with a built-in calendar.
+
+---
+
+## Setup
+
+```bash
+git clone https://github.com/Tsarian28/INFO212-GRUPPEPROSJEKT.git
+cd INFO212-GRUPPEPROSJEKT
+python -m venv .venv
+source .venv/bin/activate        # or .venv\Scripts\activate on Windows
+pip install -r requirements.txt
+python app.py
+```
+## usage
+Create a new user (username + password).
+Add or generate workouts.
+Try Weekly Plan to build a full program.
+Open Calendar to view and schedule sessions.
+Log out when done.
+
+## structure:
+- app.py                 # main Flask app
+- models.py              # database helpers
+- plan_logic.py          # smart training plan generator
+- templates/             # HTML templates
+- static/                # CSS and images
+- instance/app.db        # auto-created local database
+
+## Notes
+The database is created automatically in /instance.
+Delete instance/ to reset.
+Run locally only; debug mode is on by default.
+
